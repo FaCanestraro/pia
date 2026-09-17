@@ -9,9 +9,17 @@ primary_region = 'gru'
 [build]
 [env]
   CORS_ORIGIN = '*'
+  GALERIA_DIR = '/data/galeria'
   GEMINI_IMAGE_MODEL = 'gemini-3-pro-image-preview'
   PORT = '8080'
   RATE_LIMIT_PER_HOUR = '30'
+
+# Disco persistente do mural. Sem isto a pasta vive no filesystem da máquina, que é
+# efêmero: some a cada deploy e a cada restart.
+# Criar uma vez com:  fly volumes create pia_dados --region gru --size 3
+[mounts]
+  source = 'pia_dados'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080

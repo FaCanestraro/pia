@@ -34,7 +34,9 @@ gerador-pia/
    - o texto de `prompt_pia.txt`
    - `character_sheet_pia.jpg` (IMAGE 1 = referência de estilo e da camiseta)
    - a foto da pessoa (IMAGE 2 = referência de identidade)
-3. O Gemini devolve uma imagem 1:1. O backend repassa em base64. Nada fica salvo em disco nem em banco.
+3. O Gemini devolve uma imagem 1:1. O backend repassa em base64.
+4. Com `GALERIA=1` (padrão), o **resultado** é gravado em `backend/galeria/` e alimenta o mural no fim da página.
+   A **foto enviada pela pessoa continua não sendo salva** — só a imagem gerada.
 
 ## Subir localmente
 
@@ -58,6 +60,38 @@ Para testar o front sem gastar API: `npm run mock` (ou `MOCK=1` no `.env`). Ele 
   - Confira o nome exato dos modelos na documentação atual, os nomes de preview mudam: https://ai.google.dev/gemini-api/docs/image-generation
 - A chamada usa a REST `v1beta/models/{modelo}:generateContent` com `responseModalities: ["IMAGE"]` e `imageConfig.aspectRatio`. Se o modelo escolhido rejeitar `imageConfig`, o código tenta de novo sem ele.
 - Se preferir o SDK oficial `@google/genai`, a montagem é a mesma: `parts = [texto, sheet, foto]`.
+
+## Mural de resultados
+
+Cada geração é gravada em `backend/galeria/` e aparece num mosaico no fim do site.
+
+```
+backend/galeria/
+├── full/<id>.jpg    1024px, o que abre ao clicar
+└── thumb/<id>.jpg   420px, o que o mosaico carrega
+```
+
+O `id` é `<timestamp>-<aleatório>`, então a ordem cronológica sai do próprio nome do
+arquivo — sem índice em JSON e sem corrida de escrita entre requisições simultâneas.
+
+- `GET /api/galeria?limit=60` lista os mais recentes. Com `?desde=<id>` devolve só o
+  que chegou depois daquele id: é o que o front usa no poll de 25 s.
+- `DELETE /api/galeria/<id>` com header `x-admin-token` remove uma imagem. Só existe se
+  `ADMIN_TOKEN` estiver definido. **Defina antes de abrir ao público** — é a única forma
+  de atender alguém que peça para sair do mural.
+- `GALERIA=0` desliga a gravação e o mural some da página.
+
+Tamanho em disco: cada resultado ocupa ~220 KB (192 KB full + 29 KB thumb), contra
+~600 KB do PNG cru do Gemini. Mil gerações ≈ 220 MB.
+
+**Privacidade:** o mural publica o retrato gerado de todo mundo, automaticamente, sem
+pedir confirmação. É uma decisão consciente do projeto. Se for abrir ao público, vale
+avisar na página que o resultado aparece no mural e manter o `ADMIN_TOKEN` à mão.
+
+**Este mural exige disco persistente.** Em Vercel serverless o sistema de arquivos é
+efêmero e somente leitura fora de `/tmp`: a pasta some a cada invocação e o mural fica
+sempre vazio. Para Vercel, trocar `backend/galeria.js` por Vercel Blob, S3 ou R2 — a
+interface é só `salvar`/`listar`/`remover`, o resto do código não muda.
 
 ## Hospedagem
 

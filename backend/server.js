@@ -9,6 +9,7 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { salvar, listar, remover, GALERIA_DIR } from "./galeria.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,9 +29,12 @@ const {
   CORS_ORIGIN = "*",
   RATE_LIMIT_PER_HOUR = "20",
   MOCK = "0",
+  GALERIA = "1",        // 0 desliga a gravação e o mural
+  ADMIN_TOKEN = "",     // sem token, a rota de remoção fica desativada
 } = process.env;
 
 const mock = MOCK === "1";
+const galeriaLigada = GALERIA !== "0";
 if (!GEMINI_API_KEY && !mock) {
   console.error("Falta GEMINI_API_KEY nas variáveis de ambiente (ou ligue MOCK=1 para testar sem a API).");
   if (!process.env.VERCEL) process.exit(1);
@@ -57,6 +61,9 @@ app.use((req, res, next) => {
 
 // serve o frontend da pasta ../frontend (opcional: pode hospedar o front em outro lugar)
 app.use(express.static(path.join(__dirname, "..", "frontend")));
+
+// imagens do mural (cache longo: o nome do arquivo nunca se repete)
+app.use("/galeria", express.static(GALERIA_DIR, { maxAge: "30d", immutable: true }));
 
 // ---------- rate limit em memória (por IP, por hora) ----------
 const hits = new Map();
@@ -88,14 +95,16 @@ app.post("/api/transformar", async (req, res) => {
 
   if (mock) {
     await new Promise((r) => setTimeout(r, 2500));
-    return res.json({ imagem: `data:image/jpeg;base64,${MOCK_B64}`, modelo: "mock" });
+    const id = await guardar(Buffer.from(MOCK_B64, "base64"));
+    return res.json({ imagem: `data:image/jpeg;base64,${MOCK_B64}`, modelo: "mock", id });
   }
 
   try {
     const t0 = Date.now();
     const out = await gerarComGemini(parsed, proporcao);
     console.log(`[ok] ${GEMINI_IMAGE_MODEL} em ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-    res.json({ imagem: `data:${out.mimeType};base64,${out.data}`, modelo: GEMINI_IMAGE_MODEL });
+    const id = await guardar(Buffer.from(out.data, "base64"));
+    res.json({ imagem: `data:${out.mimeType};base64,${out.data}`, modelo: GEMINI_IMAGE_MODEL, id });
   } catch (e) {
     console.error("[erro gemini]", e.message);
     res.status(502).json({ erro: e.publicMessage || "Não consegui gerar agora. Tenta de novo." });
@@ -105,7 +114,28 @@ app.post("/api/transformar", async (req, res) => {
 // Em servidor comum (Railway, Render, VPS) sobe a porta.
 // Em serverless (Vercel) o app é exportado e a plataforma cuida do resto.
 if (!process.env.VERCEL) {
-  app.listen(Number(PORT), () => {
+  // ---------- mural ----------
+app.get("/api/galeria", async (req, res) => {
+  if (!galeriaLigada) return res.json({ ligada: false, total: 0, itens: [] });
+  const limit = Math.min(Number(req.query.limit) || 60, 200);
+  try {
+    res.json({ ligada: true, ...(await listar({ limit, desde: req.query.desde || null })) });
+  } catch (e) {
+    console.error("[erro galeria]", e.message);
+    res.status(500).json({ erro: "Não consegui ler o mural." });
+  }
+});
+
+// Remoção manual (pedido de alguém que não quer mais aparecer, foto imprópria).
+// Só existe se ADMIN_TOKEN estiver definido no .env.
+app.delete("/api/galeria/:id", async (req, res) => {
+  if (!ADMIN_TOKEN) return res.status(404).json({ erro: "Remoção não está habilitada." });
+  if (req.headers["x-admin-token"] !== ADMIN_TOKEN) return res.status(401).json({ erro: "Token inválido." });
+  const ok = await remover(req.params.id);
+  res.status(ok ? 200 : 404).json({ removido: ok });
+});
+
+app.listen(Number(PORT), () => {
     console.log(`Gerador Piá rodando em http://localhost:${PORT}  (modelo: ${mock ? "MOCK" : GEMINI_IMAGE_MODEL})`);
   });
 }
@@ -113,6 +143,17 @@ if (!process.env.VERCEL) {
 export default app;
 
 // ---------- helpers ----------
+// A foto do usuário continua não sendo salva: só o resultado gerado vai para o mural.
+// Falha de disco aqui não pode custar ao usuário a imagem que ele já esperou 25 s.
+async function guardar(buffer) {
+  if (!galeriaLigada) return null;
+  try {
+    return await salvar(buffer);
+  } catch (e) {
+    console.error("[erro ao salvar no mural]", e.message);
+    return null;
+  }
+}
 function parseDataUrl(s) {
   if (typeof s !== "string") return null;
   const m = s.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);

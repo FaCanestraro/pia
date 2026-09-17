@@ -11,8 +11,20 @@ Página web pra mandar pro programador hospedar. A pessoa tira selfie ou escolhe
 - `README.md`: instruções pro programador (instalar, chave, modelo, hospedagem, CORS, timeout).
 - Testado no navegador em modo MOCK (desktop e mobile). Fluxo completo OK.
 
+## Testado com a API real (17/09/2026)
+- `gemini-2.5-flash-image`: 11,4 s, resposta 2,8 MB. Camiseta preta e bastidor corretos, mas o logo saiu "BOIO".
+- `gemini-3-pro-image-preview`: 24,7 s, resposta 812 KB. Selfie real ficou boa: traço, camiseta, fundo e identidade OK. **É o modelo em uso.**
+- Ressalva: o logo da Bold sai redesenhado ("BOID"), não é o wordmark real. Modelo de imagem não reproduz logo — se precisar de fidelidade de marca, compositar o `logo_bold.png` por cima depois da geração.
+
+## Mural (v2)
+- `backend/galeria.js` + rotas `GET /api/galeria` e `DELETE /api/galeria/:id`, seção `#mural` no front com mosaico responsivo, lightbox e poll de 25 s.
+- Testado em mock (vazio, 3 itens, 12 itens, desktop e mobile 390px, lightbox, ESC) e o caminho de gravação testado com PNG real do Gemini.
+- Grava automaticamente, sem opt-in. `ADMIN_TOKEN` é a única via de remoção — definir antes de abrir ao público.
+- Depende de disco persistente: **não funciona em Vercel serverless** sem trocar por object storage.
+
 ## NÃO testado
-- Geração real no Gemini: não há chave na máquina. O programador precisa colocar a `GEMINI_API_KEY` e rodar 5 selfies pra comparar `gemini-2.5-flash-image` x `gemini-3-pro-image-preview` e ajustar o prompt se a camiseta ou o rosto não vierem bem.
+- Mural sob concorrência real (várias pessoas gerando ao mesmo tempo num evento).
+- Deploy em qualquer plataforma: só rodou local.
 
 ## Onde estão os originais
 - Character sheet: `Desktop/Mesa - MacBook Pro de Murillo - 1/PRODUÇÃO BOLD/APP GERADOR/04-character-sheet- PIA-TIF_BOLD`
