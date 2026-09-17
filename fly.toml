@@ -35,8 +35,9 @@ primary_region = 'gru'
     hard_limit = 40
     soft_limit = 20
 
+# performance-2x para o evento de 25 pessoas: CPU dedicada absorve o pico do sharp
+# (dois encodes JPEG por geração) com 13 simultâneas. Depois do evento dá para voltar
+# para shared-cpu-1x e economizar.
 [[vm]]
-  size = 'shared-cpu-1x'
-  memory = '1gb'
-  cpus = 1
-  memory_mb = 1024
+  size = 'performance-2x'
+  memory = '4gb'
