@@ -33,6 +33,9 @@ const {
   GEMINI_CONCURRENCY = "2",   // chamadas simultâneas ao Gemini; acima disso, fila
   COOLDOWN_IP_S = "15",       // intervalo mínimo entre gerações do mesmo IP
   LIMITE_GLOBAL_HORA = "300", // teto de gerações/hora no app todo (guarda de orçamento)
+  GEMINI_TENTATIVAS = "3",    // total de tentativas por geração (1 + 2 repetições)
+  GEMINI_TIMEOUT_S = "90",    // teto por tentativa; evita conexão pendurada segurar a fila
+  GEMINI_BASE_URL = "https://generativelanguage.googleapis.com", // trocável para testar
 } = process.env;
 
 const mock = MOCK === "1";
@@ -277,7 +280,7 @@ function parseDataUrl(s) {
 }
 
 async function gerarComGemini(foto, proporcao, signal) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`;
+  const url = `${GEMINI_BASE_URL}/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`;
 
   const body = {
     contents: [
@@ -296,12 +299,12 @@ async function gerarComGemini(foto, proporcao, signal) {
     },
   };
 
-  let r = await chamar(url, body, signal);
+  let r = await comRepeticao(() => chamar(url, body, signal), signal);
 
   // Alguns modelos/versões não aceitam imageConfig: tenta sem.
   if (r.status === 400 && /imageConfig|aspect/i.test(r.text)) {
     delete body.generationConfig.imageConfig;
-    r = await chamar(url, body, signal);
+    r = await comRepeticao(() => chamar(url, body, signal), signal);
   }
 
   if (r.status !== 200) {
@@ -324,13 +327,63 @@ async function gerarComGemini(foto, proporcao, signal) {
 }
 
 async function chamar(url, body, signal) {
+  // Teto por tentativa: sem isso uma conexão pendurada segura uma vaga da fila até o
+  // cliente desistir — foi o que aconteceu durante o bloqueio do Google.
+  const teto = AbortSignal.timeout(num(GEMINI_TIMEOUT_S, 90) * 1000);
+  const juntos = signal ? AbortSignal.any([signal, teto]) : teto;
+
   const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
     body: JSON.stringify(body),
-    signal,
+    signal: juntos,
   });
   return { status: resp.status, text: await resp.text() };
+}
+
+// Falha de rede e 5xx costumam ser transitórias. 4xx (chave errada, foto inválida) não
+// melhoram repetindo, e 429 é o Google pedindo para desacelerar — insistir piora.
+function recuperavel(e, status) {
+  if (status !== undefined) return status >= 500 && status < 600;
+  if (e?.name === "TimeoutError") return true;   // tentativa estourou o teto próprio
+  return e?.name === "TypeError" || /fetch failed|network|socket|ECONN|ETIMEDOUT|terminated/i.test(e?.message || "");
+}
+
+// Backoff exponencial com jitter. A espera é generosa de propósito: quando a falha é
+// throttling por IP, repetir rápido alimenta o problema que se quer contornar.
+async function comRepeticao(fn, signal) {
+  const total = Math.max(1, num(GEMINI_TENTATIVAS, 3));
+  let ultimo;
+  for (let n = 1; n <= total; n++) {
+    try {
+      const r = await fn();
+      if (recuperavel(null, r.status) && n < total) {
+        ultimo = new Error(`HTTP ${r.status}`);
+      } else {
+        return r;
+      }
+    } catch (e) {
+      // Cliente desistiu: não é falha do Gemini, não repete.
+      if (signal?.aborted) throw e;
+      if (!recuperavel(e) || n === total) throw e;
+      ultimo = e;
+    }
+    const base = 2000 * 2 ** (n - 1);              // 2s, 4s, 8s...
+    const espera = Math.round(base + Math.random() * base * 0.5);
+    console.warn(`[retry ${n}/${total - 1}] ${String(ultimo?.message).slice(0, 70)} — repetindo em ${(espera / 1000).toFixed(1)}s`);
+    await dormir(espera, signal);
+  }
+  throw ultimo;
+}
+
+function dormir(ms, signal) {
+  return new Promise((ok, falha) => {
+    const t = setTimeout(ok, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(t);
+      falha(Object.assign(new Error("abortado"), { name: "AbortError" }));
+    }, { once: true });
+  });
 }
 
 function allowedRatio(p) {

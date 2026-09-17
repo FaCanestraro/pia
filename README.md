@@ -122,6 +122,30 @@ O freio de uso tem duas partes, porque uma cota por IP não serve para evento:
 - `LIMITE_GLOBAL_HORA` (300): teto de gerações por hora no app inteiro, como guarda de
   orçamento. Conta tentativas, não sucessos.
 
+## O limite real: reputação do IP de saída
+
+O gargalo não é a cota do projeto no Google, é a **proteção anti-abuso por IP de origem**.
+Como toda geração sai do backend, o IP que o Google vê é o de egresso da máquina — que no
+Fly é compartilhado com outros clientes.
+
+Medido em 17/09/2026: uma rajada de chamadas simultâneas fez o Google primeiro degradar
+(84 e 91 s contra os 20-22 s normais) e depois **recusar conexões por ~11 minutos**.
+O sintoma é `fetch failed` / timeout de conexão, não 429 — 429 seria estouro de cota,
+que é outra coisa. Da mesma máquina, no mesmo momento, `api.github.com` respondia normal
+e `www.google.com` dava timeout.
+
+Consequências:
+
+- `GEMINI_CONCURRENCY` existe para não tropeçar nesse limite. Não é ajuste de performance.
+- O número seguro **não é descobrível** com egresso compartilhado: depende do tráfego de
+  terceiros no mesmo IP e muda sozinho.
+- A correção de raiz é IP de saída dedicado: `fly ips allocate-egress --region gru`.
+  Aí o teto passa a depender só do seu tráfego e vira estável e calibrável.
+- O retry com backoff cobre a falha transitória, mas **não** cobre bloqueio duro de IP.
+
+Vigiar durante evento: `fly logs | grep -E "retry|fetch failed"`. Retry frequente = perto
+do limite, vale descer a concorrência. `fetch failed` mesmo com retry = já bloqueado.
+
 ## Hospedagem
 
 O repositório já vem configurado para as duas plataformas. **A Railway é a recomendada**: a geração leva de 8 a 30 s e um servidor sempre ligado lida melhor com isso do que uma função serverless.
