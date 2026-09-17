@@ -1,0 +1,35 @@
+# Gerador Piá · Fly.io
+# Deploy:  fly launch --no-deploy   (só na primeira vez)
+#          fly secrets set GEMINI_API_KEY=xxxxx
+#          fly deploy
+
+app = "pia"
+primary_region = "gru"
+
+[build]
+
+[env]
+  PORT = "8080"
+  GEMINI_IMAGE_MODEL = "gemini-3-pro-image-preview"
+  RATE_LIMIT_PER_HOUR = "30"
+  CORS_ORIGIN = "*"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+  # NÃO desligar a máquina: cold start no meio da apresentação é o pior cenário.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # Uma geração segura ~8-30s. Node é assíncrono, então uma máquina
+  # aguenta várias em paralelo sem problema.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 40
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

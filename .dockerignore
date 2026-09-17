@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.env
+.env.*
+.DS_Store
+*.log
+.vercel
+.railway
+
+# 12 MB de originais em alta que não são usados em runtime
+referencias/
