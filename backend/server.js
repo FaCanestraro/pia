@@ -22,7 +22,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const {
-  GEMINI_API_KEY = "",
+  GEMINI_API_KEY = "AIzaSyCswBbrcBYLIpErGUcnDXQ5Pg2B3MvVk2k",
   GEMINI_IMAGE_MODEL = "gemini-3-pro-image-preview",
   PORT = "3000",
   CORS_ORIGIN = "*",
