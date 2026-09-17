@@ -1,35 +1,32 @@
-# Gerador Piá · Fly.io
-# Deploy:  fly launch --no-deploy   (só na primeira vez)
-#          fly secrets set GEMINI_API_KEY=xxxxx
-#          fly deploy
+# fly.toml app configuration file generated for pia-hidden-haze-4185 on 2026-09-17T10:40:27-03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "pia"
-primary_region = "gru"
+app = 'pia-hidden-haze-4185'
+primary_region = 'gru'
 
 [build]
-
 [env]
-  PORT = "8080"
-  GEMINI_IMAGE_MODEL = "gemini-3-pro-image-preview"
-  RATE_LIMIT_PER_HOUR = "30"
-  CORS_ORIGIN = "*"
+  CORS_ORIGIN = '*'
+  GEMINI_IMAGE_MODEL = 'gemini-3-pro-image-preview'
+  PORT = '8080'
+  RATE_LIMIT_PER_HOUR = '30'
 
 [http_service]
   internal_port = 8080
   force_https = true
-
-  # NÃO desligar a máquina: cold start no meio da apresentação é o pior cenário.
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
-  # Uma geração segura ~8-30s. Node é assíncrono, então uma máquina
-  # aguenta várias em paralelo sem problema.
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 20
+    type = 'requests'
     hard_limit = 40
+    soft_limit = 20
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  size = 'shared-cpu-1x'
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024
