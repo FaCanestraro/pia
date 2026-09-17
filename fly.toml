@@ -12,7 +12,7 @@ primary_region = 'gru'
   GALERIA_DIR = '/data/galeria'
   GEMINI_IMAGE_MODEL = 'gemini-3-pro-image-preview'
   PORT = '8080'
-  COOLDOWN_IP_S = '15'
+  COOLDOWN_IP_S = '5'
   GEMINI_CONCURRENCY = '4'
   LIMITE_GLOBAL_HORA = '300'
 

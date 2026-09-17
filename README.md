@@ -139,8 +139,11 @@ Consequências:
 - `GEMINI_CONCURRENCY` existe para não tropeçar nesse limite. Não é ajuste de performance.
 - O número seguro **não é descobrível** com egresso compartilhado: depende do tráfego de
   terceiros no mesmo IP e muda sozinho.
-- A correção de raiz é IP de saída dedicado: `fly ips allocate-egress --region gru`.
-  Aí o teto passa a depender só do seu tráfego e vira estável e calibrável.
+- **Resolvido em 17/09/2026 com IP de saída dedicado** (`fly ips allocate-egress --region gru`).
+  O app ficou ~50 min sem gerar (15:56 às 16:40); assim que a rota de saída mudou para
+  `209.71.74.130`, a primeira geração voltou em 20,4 s, sem nenhum retry. Confirmou que o
+  problema era reputação de IP compartilhado: nada de errado com a chave, a cota ou o código.
+  Com IP dedicado o teto passa a depender só do seu tráfego, e vira estável e calibrável.
 - O retry com backoff cobre a falha transitória, mas **não** cobre bloqueio duro de IP.
 
 Vigiar durante evento: `fly logs | grep -E "retry|fetch failed"`. Retry frequente = perto

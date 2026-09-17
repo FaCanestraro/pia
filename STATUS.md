@@ -29,6 +29,12 @@ Página web pra mandar pro programador hospedar. A pessoa tira selfie ou escolhe
 - Freio trocado: cooldown por IP (15 s) + teto global por hora (300), porque cota por IP tranca evento com wifi compartilhado.
 - Testado em mock: 6 simultâneas com concorrência 2 saíram em 3/3/6/6/9/9 s com a geração constante em 3 s; cooldown, limite global e abort verificados.
 
+## Bloqueio de IP (17/09/2026)
+- App ficou ~50 min sem gerar. Sintoma: `fetch failed` / Connect Timeout só para domínios Google; github e npm respondiam normal da mesma máquina.
+- Causa: proteção anti-abuso do Google sobre o IP de egresso COMPARTILHADO do Fly. Não era cota, não era a chave, não era concorrência da API (10 simultâneas do meu Mac passaram em ~40s).
+- Conserto: `fly ips allocate-egress --region gru` -> egress dedicado `209.71.74.130`. Primeira geração depois disso: 20,4s, zero retry.
+- Lição: com egress compartilhado o limite seguro não é descobrível, porque depende do tráfego de terceiros no mesmo IP.
+
 ## NÃO testado
 - Mural sob concorrência real (várias pessoas gerando ao mesmo tempo num evento).
 - Deploy em qualquer plataforma: só rodou local.
