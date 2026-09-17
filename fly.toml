@@ -13,7 +13,7 @@ primary_region = 'gru'
   GEMINI_IMAGE_MODEL = 'gemini-3-pro-image-preview'
   PORT = '8080'
   COOLDOWN_IP_S = '5'
-  GEMINI_CONCURRENCY = '13'
+  GEMINI_CONCURRENCY = '25'
   LIMITE_GLOBAL_HORA = '300'
 
 # Disco persistente do mural. Sem isto a pasta vive no filesystem da máquina, que é
