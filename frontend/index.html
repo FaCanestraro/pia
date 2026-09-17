@@ -562,20 +562,42 @@ $("btnTrocar").onclick = () => { preview.hidden = true; frameEmpty.hidden = fals
 
 // ===== transformar =====
 const msgs = ["Ajustando a luz", "Marcando o chão", "Escolhendo a lente", "Chamando o Piá", "Vestindo a camiseta", "Últimos retoques"];
-let msgTimer = null;
+let msgTimer = null, filaTimer = null;
 $("btnTransformar").onclick = async () => {
   if (!fotoDataUrl) return;
   loader.hidden = false; erro.classList.remove("show");
+  const ticket = (crypto.randomUUID?.() || String(Math.random())).slice(0, 36);
   $("btnTransformar").disabled = true;
   let i = 0; $("loaderMsg").textContent = msgs[0];
   msgTimer = setInterval(() => { i = (i + 1) % msgs.length; $("loaderMsg").textContent = msgs[i]; }, 2800);
 
+  // Com fila no backend a espera pode ser real; melhor dizer que existe fila do que
+  // deixar o usuário achando que travou.
+  filaTimer = setInterval(async () => {
+    try {
+      const f = await (await fetch(`${FILA_URL}?ticket=${encodeURIComponent(ticket)}`, { cache: "no-store" })).json();
+      const naFila = f.estado === "fila";
+      if (naFila) {
+        clearInterval(msgTimer); msgTimer = null;
+        $("loaderTitle").textContent = "Na fila";
+        $("loaderMsg").textContent = f.naFrente === 0
+          ? "Você é o próximo"
+          : `Tem ${f.naFrente} ${f.naFrente === 1 ? "pessoa" : "pessoas"} na sua frente`;
+      } else if (!msgTimer) {
+        $("loaderTitle").textContent = "Entrando no set";
+        msgTimer = setInterval(() => { i = (i + 1) % msgs.length; $("loaderMsg").textContent = msgs[i]; }, 2800);
+      }
+    } catch { /* indicador de fila é enfeite: falhou, o loader segue normal */ }
+  }, 3000);
+
   try {
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 120000);
+    // 180s: com fila, esperar a vez é legítimo. O backend cancela a chamada ao Gemini
+    // se este abort disparar, então esperar mais não custa crédito à toa.
+    const to = setTimeout(() => ctrl.abort(), 180000);
     const r = await fetch(API_URL, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imagem: fotoDataUrl, proporcao: "1:1" }), signal: ctrl.signal,
+      body: JSON.stringify({ imagem: fotoDataUrl, proporcao: "1:1", ticket }), signal: ctrl.signal,
     });
     clearTimeout(to);
     const j = await r.json().catch(() => ({}));
@@ -586,10 +608,12 @@ $("btnTransformar").onclick = async () => {
     goStep(3);
     if (j.id) carregarMural({ incremental: true }); // o seu aparece sem esperar o poll
   } catch (err) {
-    mostrarErro(err.name === "AbortError" ? "Demorou demais. Tenta de novo." : err.message);
+    mostrarErro(err.name === "AbortError" ? "A fila está longa demais agora. Tenta de novo em alguns minutos." : err.message);
     goStep(2);
   } finally {
-    clearInterval(msgTimer); loader.hidden = true; $("btnTransformar").disabled = false;
+    clearInterval(msgTimer); clearInterval(filaTimer);
+    $("loaderTitle").textContent = "Entrando no set";
+    loader.hidden = true; $("btnTransformar").disabled = false;
   }
 };
 
@@ -615,6 +639,7 @@ $("btnOutra").onclick = () => { $("btnTrocar").click(); resultadoDataUrl = null;
 // Mosaico dos resultados já gerados. Busca ao carregar, repete a cada 25 s e
 // insere só o que chegou depois do id mais recente que já está na tela.
 const GALERIA_URL = (window.PIA_API_URL || "/api/transformar").replace(/\/transformar$/, "/galeria");
+const FILA_URL = (window.PIA_API_URL || "/api/transformar").replace(/\/transformar$/, "/fila");
 const mural = $("mural"), mosaico = $("mosaico"), muralVazio = $("muralVazio"), muralCount = $("muralCount");
 let idMaisNovo = null, totalMural = 0;
 

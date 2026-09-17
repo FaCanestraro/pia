@@ -93,6 +93,35 @@ efêmero e somente leitura fora de `/tmp`: a pasta some a cada invocação e o m
 sempre vazio. Para Vercel, trocar `backend/galeria.js` por Vercel Blob, S3 ou R2 — a
 interface é só `salvar`/`listar`/`remover`, o resto do código não muda.
 
+## Fila e limites
+
+Uma medição em produção mostrou que a API do Gemini degrada muito com chamadas
+simultâneas na mesma chave — ela enfileira do lado do Google em vez de recusar:
+
+| situação | duração da chamada |
+|---|---|
+| isolada | 20-22 s |
+| três em paralelo | 84 s, 91 s, 28 s |
+
+Por isso o backend limita a concorrência e enfileira o excedente. O efeito é que cada
+geração continua levando ~20 s e só a espera cresce, em vez de todo mundo degradar junto
+e estourar o timeout do navegador.
+
+- `GEMINI_CONCURRENCY` (2): chamadas simultâneas ao Gemini.
+- `GET /api/fila?ticket=<id>`: posição na fila. O front manda um `ticket` junto com a
+  geração e consulta isto a cada 3 s para mostrar "tem N pessoas na sua frente".
+- O front aborta em 180 s e o backend **cancela a chamada ao Gemini** quando o cliente
+  desiste, para não gerar (e pagar) uma imagem que ninguém vai receber.
+
+O freio de uso tem duas partes, porque uma cota por IP não serve para evento:
+
+- `COOLDOWN_IP_S` (15): intervalo mínimo entre duas gerações do mesmo IP. Num local com
+  wifi compartilhado todo mundo sai pelo mesmo IP público — uma cota por hora por IP
+  trancaria o evento inteiro depois das primeiras gerações. O cooldown curto segura
+  o clique repetido sem punir o grupo.
+- `LIMITE_GLOBAL_HORA` (300): teto de gerações por hora no app inteiro, como guarda de
+  orçamento. Conta tentativas, não sucessos.
+
 ## Hospedagem
 
 O repositório já vem configurado para as duas plataformas. **A Railway é a recomendada**: a geração leva de 8 a 30 s e um servidor sempre ligado lida melhor com isso do que uma função serverless.

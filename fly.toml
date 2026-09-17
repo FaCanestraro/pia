@@ -12,7 +12,9 @@ primary_region = 'gru'
   GALERIA_DIR = '/data/galeria'
   GEMINI_IMAGE_MODEL = 'gemini-3-pro-image-preview'
   PORT = '8080'
-  RATE_LIMIT_PER_HOUR = '30'
+  COOLDOWN_IP_S = '15'
+  GEMINI_CONCURRENCY = '2'
+  LIMITE_GLOBAL_HORA = '300'
 
 # Disco persistente do mural. Sem isto a pasta vive no filesystem da máquina, que é
 # efêmero: some a cada deploy e a cada restart.

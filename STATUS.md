@@ -22,6 +22,13 @@ Página web pra mandar pro programador hospedar. A pessoa tira selfie ou escolhe
 - Grava automaticamente, sem opt-in. `ADMIN_TOKEN` é a única via de remoção — definir antes de abrir ao público.
 - Depende de disco persistente: **não funciona em Vercel serverless** sem trocar por object storage.
 
+## Fila e limites (v3)
+- Medido em produção: Gemini leva 20-22 s isolado e 84-91 s com três chamadas simultâneas na mesma chave. Não é o Fly nem o sharp — chamadas isoladas na mesma máquina voltaram a 20 s.
+- Fila com `GEMINI_CONCURRENCY=2`, posição por ticket em `GET /api/fila`, indicador no loader.
+- Cancelamento: cliente que desiste aborta a chamada ao Gemini e libera a vaga na hora.
+- Freio trocado: cooldown por IP (15 s) + teto global por hora (300), porque cota por IP tranca evento com wifi compartilhado.
+- Testado em mock: 6 simultâneas com concorrência 2 saíram em 3/3/6/6/9/9 s com a geração constante em 3 s; cooldown, limite global e abort verificados.
+
 ## NÃO testado
 - Mural sob concorrência real (várias pessoas gerando ao mesmo tempo num evento).
 - Deploy em qualquer plataforma: só rodou local.
