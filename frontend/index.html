@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vire o Piá</title>
+<meta name="description" content="Tire uma selfie e veja você no traço do Piá, com a camiseta da PRODUÇÃO BOLD, PIX2 e tif.">
+<meta property="og:title" content="Vire o Piá">
+<meta property="og:description" content="Sua selfie no traço do Piá. Uma brincadeira de PRODUÇÃO BOLD, PIX2 e tif.">
+<meta property="og:image" content="assets/hero_bastidor.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1414ff;
+    --blue-deep:#0a0a5a;
+    --ink:#07070f;
+    --ink-2:#101020;
+    --panel:#15152a;
+    --line:rgba(255,255,255,.12);
+    --text:#f4f4ff;
+    --muted:#a9a9c8;
+    --green:#1f8a4c;
+    --radius:22px;
+    --font-head:"Space Grotesk",system-ui,sans-serif;
+    --font-body:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);color:var(--text);font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100dvh;
+  }
+  img{display:block;max-width:100%}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  a{color:inherit}
+
+  /* ---------- topo ---------- */
+  .topbar{
+    position:fixed;inset:0 0 auto 0;z-index:20;padding:18px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:linear-gradient(180deg,rgba(7,7,15,.85),rgba(7,7,15,0));
+  }
+  .brands{display:flex;align-items:center;gap:22px}
+  .brands img{height:22px;width:auto;opacity:.95}
+  .brands img.bold{height:30px}
+  .brands img.tif{height:26px}
+  .brands .sep{width:1px;height:18px;background:var(--line)}
+  .topbar .tag{
+    font:600 11px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    padding:8px 12px;border:1px solid var(--line);border-radius:999px;white-space:nowrap
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;min-height:100svh;display:grid;align-items:end;
+    isolation:isolate;overflow:hidden;
+  }
+  .hero picture,.hero picture img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+  .hero picture img{object-position:62% 40%}
+  .hero::after{
+    content:"";position:absolute;inset:0;z-index:-1;
+    background:
+      linear-gradient(180deg,rgba(7,7,15,.15) 0%,rgba(7,7,15,0) 30%,rgba(7,7,15,.55) 65%,rgba(7,7,15,.98) 100%),
+      linear-gradient(90deg,rgba(7,7,15,.55) 0%,rgba(7,7,15,0) 55%);
+  }
+  .hero-inner{
+    width:min(1200px,100%);margin:0 auto;padding:0 20px 44px;
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:10px;font:600 12px/1 var(--font-body);
+    letter-spacing:.16em;text-transform:uppercase;color:#cfcfff;
+    padding:9px 14px;border-radius:999px;background:rgba(20,20,255,.22);border:1px solid rgba(120,120,255,.35);
+    backdrop-filter:blur(8px);
+  }
+  .kicker i{width:8px;height:8px;border-radius:50%;background:#ff3b3b;box-shadow:0 0 0 4px rgba(255,59,59,.25);animation:rec 1.4s infinite}
+  @keyframes rec{50%{opacity:.35}}
+  h1{
+    font:700 clamp(44px,9vw,104px)/.95 var(--font-head);letter-spacing:-.03em;margin:18px 0 14px;
+    max-width:12ch;text-wrap:balance;
+  }
+  h1 em{font-style:normal;color:#8f8fff}
+  .lead{font-size:clamp(16px,2vw,20px);line-height:1.5;color:#dcdcf2;max-width:52ch}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    padding:16px 24px;border-radius:999px;font:600 16px/1 var(--font-body);
+    transition:transform .15s ease,background .2s,box-shadow .2s;min-height:54px;text-decoration:none;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--blue);color:#fff;box-shadow:0 12px 40px rgba(20,20,255,.35)}
+  .btn-primary:hover{background:#2a2aff}
+  .btn-ghost{background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;backdrop-filter:blur(8px)}
+  .btn-ghost:hover{background:rgba(255,255,255,.14)}
+  .btn svg{width:20px;height:20px;flex:none}
+  .btn[disabled]{opacity:.5;pointer-events:none}
+  .scroll-hint{position:absolute;right:20px;bottom:22px;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;writing-mode:vertical-rl;opacity:.7}
+
+  /* ---------- seções ---------- */
+  section{padding:72px 20px}
+  .wrap{width:min(1100px,100%);margin:0 auto}
+  .eyebrow{font:600 12px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:#8f8fff;margin-bottom:14px}
+  h2{font:700 clamp(30px,4.5vw,52px)/1.05 var(--font-head);letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--muted);font-size:17px;line-height:1.55;margin-top:12px;max-width:60ch}
+
+  /* app */
+  #app{background:linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 100%);border-top:1px solid var(--line)}
+  .stage{
+    margin-top:32px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;display:grid;gap:22px;
+  }
+  @media(min-width:860px){.stage{grid-template-columns:1.1fr .9fr;align-items:start}}
+  .frame{
+    position:relative;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#0b0b18;
+    border:1px dashed rgba(255,255,255,.18);display:grid;place-items:center;text-align:center;color:var(--muted);
+  }
+  .frame.solid{border-style:solid}
+  .frame img,.frame video,.frame canvas{width:100%;height:100%;object-fit:cover}
+  .frame video.mirror{transform:scaleX(-1)}
+  .frame .empty{padding:24px;display:grid;gap:12px;justify-items:center}
+  .frame .empty svg{width:48px;height:48px;opacity:.5}
+  .frame .empty strong{color:var(--text);font-weight:600}
+  .frame .corner{position:absolute;width:26px;height:26px;border:3px solid #8f8fff;opacity:.9}
+  .frame .corner.tl{top:12px;left:12px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
+  .frame .corner.tr{top:12px;right:12px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
+  .frame .corner.bl{bottom:12px;left:12px;border-right:0;border-top:0;border-radius:0 0 0 6px}
+  .frame .corner.br{bottom:12px;right:12px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+
+  .controls{display:grid;gap:14px;align-content:start}
+  .controls h3{font:700 22px/1.2 var(--font-head)}
+  .controls p{color:var(--muted);line-height:1.5;font-size:15px}
+  .choice{display:grid;gap:10px}
+  @media(min-width:520px){.choice{grid-template-columns:1fr 1fr}}
+  .choice .btn{width:100%;padding:18px}
+  .tips{display:grid;gap:8px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:14px;color:#cfcfe6}
+  .tips li{list-style:none;display:flex;gap:10px;align-items:flex-start}
+  .tips li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:#8f8fff;margin-top:7px}
+  .privacy{font-size:12px;color:var(--muted);line-height:1.5}
+
+  .step{display:none}
+  .step.active{display:contents}
+
+  /* loading */
+  .loader{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,7,15,.78);backdrop-filter:blur(6px);text-align:center;padding:24px}
+  .loader .ring{width:64px;height:64px;border-radius:50%;border:4px solid rgba(255,255,255,.12);border-top-color:#8f8fff;animation:spin 1s linear infinite;margin:0 auto 18px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader strong{display:block;font:700 20px/1.2 var(--font-head);margin-bottom:8px}
+  .loader span{color:var(--muted);font-size:14px}
+  .scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#8f8fff,transparent);animation:scan 2.2s ease-in-out infinite;opacity:.8}
+  @keyframes scan{0%{top:6%}50%{top:94%}100%{top:6%}}
+
+  /* resultado */
+  .compare{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  .compare figure{position:relative;border-radius:16px;overflow:hidden;background:#0b0b18;aspect-ratio:1/1}
+  .compare figure img{width:100%;height:100%;object-fit:cover}
+  .compare figcaption{position:absolute;left:10px;top:10px;font:600 11px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:rgba(7,7,15,.7);backdrop-filter:blur(6px)}
+  .compare figure.after{grid-column:1/-1;aspect-ratio:1/1}
+  @media(min-width:520px){.compare{grid-template-columns:1fr 2fr}.compare figure.after{grid-column:auto}}
+  .result-actions{display:grid;gap:10px}
+  @media(min-width:520px){.result-actions{grid-template-columns:1fr 1fr}}
+  .result-actions .btn{width:100%}
+  .result-actions .wide{grid-column:1/-1}
+  .error{padding:14px 16px;border-radius:14px;background:rgba(255,59,59,.12);border:1px solid rgba(255,59,59,.35);color:#ffd4d4;font-size:14px;line-height:1.5;display:none}
+  .error.show{display:block}
+
+  /* como funciona */
+  .steps{display:grid;gap:14px;margin-top:32px}
+  @media(min-width:760px){.steps{grid-template-columns:repeat(3,1fr)}}
+  .card{padding:24px;border-radius:var(--radius);background:var(--panel);border:1px solid var(--line)}
+  .card .n{font:700 40px/1 var(--font-head);color:#8f8fff;margin-bottom:14px}
+  .card h3{font:700 19px/1.25 var(--font-head);margin-bottom:8px}
+  .card p{color:var(--muted);line-height:1.5;font-size:15px}
+
+  /* personagem */
+  #personagem{background:var(--ink-2)}
+  .sheet{margin-top:28px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:#fff}
+  .sheet img{width:100%}
+  .traits{display:grid;gap:10px;margin-top:22px}
+  @media(min-width:760px){.traits{grid-template-columns:repeat(4,1fr)}}
+  .trait{padding:16px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+  .trait b{display:block;font:700 15px/1.2 var(--font-head);margin-bottom:6px}
+  .trait span{color:var(--muted);font-size:14px;line-height:1.45}
+
+  /* footer */
+  footer{padding:48px 20px 40px;border-top:1px solid var(--line);text-align:center}
+  footer .brands{justify-content:center;margin-bottom:18px}
+  footer .brands img{height:26px}
+  footer .brands img.bold{height:34px}
+  footer .brands img.tif{height:30px}
+  footer p{color:var(--muted);font-size:13px;line-height:1.6}
+
+  /* câmera modal */
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(7,7,15,.92);display:none;place-items:center;padding:20px}
+  .modal.open{display:grid}
+  .modal .box{width:min(560px,100%);display:grid;gap:14px}
+  .modal .frame{aspect-ratio:3/4;border-style:solid}
+  .modal .row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+  .shutter{width:76px;height:76px;border-radius:50%;background:#fff;border:6px solid rgba(255,255,255,.35);margin:0 auto;box-shadow:0 0 0 2px rgba(0,0,0,.4) inset}
+  .shutter:active{transform:scale(.94)}
+  .icon-btn{display:inline-flex;align-items:center;gap:8px;color:#fff;font-size:14px;font-weight:600;padding:12px 14px;border-radius:999px;background:rgba(255,255,255,.1)}
+  .icon-btn svg{width:18px;height:18px}
+  .justify-end{justify-self:end}
+
+  @media(max-width:520px){
+    .topbar{padding:14px 16px}
+    .brands{gap:14px}
+    .brands img{height:18px}.brands img.bold{height:24px}.brands img.tif{height:21px}
+    .topbar .tag{display:none}
+    .hero-inner{padding-bottom:36px}
+    section{padding:56px 16px}
+    .stage{padding:14px}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brands" aria-label="PRODUÇÃO BOLD, PIX2 e tif">
+    <img class="bold" src="assets/logo_bold_dark.png" alt="PRODUÇÃO BOLD">
+    <span class="sep"></span>
+    <img src="assets/logo_pix2_white.png" alt="PIX2">
+    <span class="sep"></span>
+    <img class="tif" src="assets/logo_tif_white.png" alt="tif">
+  </div>
+  <span class="tag">Bastidores · Piá</span>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="topo">
+  <picture>
+    <source media="(max-width:700px)" srcset="assets/hero_bastidor_mobile.jpg">
+    <img src="assets/hero_bastidor.jpg" alt="Piá no set de filmagem, ao lado de uma câmera de cinema, fazendo joinha">
+  </picture>
+  <div class="hero-inner">
+    <span class="kicker"><i></i> Gravando</span>
+    <h1>Você, no traço do <em>Piá.</em></h1>
+    <p class="lead">Tira uma selfie ou escolhe uma foto da galeria. Em segundos você vira personagem do mesmo filme, com a camiseta da equipe e tudo.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Quero virar personagem
+      </a>
+      <a class="btn btn-ghost" href="#personagem">Conhecer o Piá</a>
+    </div>
+  </div>
+  <span class="scroll-hint">role</span>
+</section>
+
+<!-- ================= APP ================= -->
+<section id="app">
+  <div class="wrap">
+    <div class="eyebrow">Sua vez</div>
+    <h2>Entra no set.</h2>
+    <p class="sub">A foto é usada só para gerar a imagem e não fica salva em lugar nenhum.</p>
+
+    <div class="stage">
+      <!-- lado esquerdo: quadro -->
+      <div class="frame" id="frame">
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+        <div class="empty" id="frameEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <strong>Sua foto aparece aqui</strong>
+          <span>Rosto de frente, boa luz, sem óculos escuros.</span>
+        </div>
+        <img id="preview" alt="" hidden>
+        <div class="loader" id="loader" hidden>
+          <div>
+            <div class="ring"></div>
+            <strong id="loaderTitle">Entrando no set</strong>
+            <span id="loaderMsg">Ajustando a luz</span>
+          </div>
+          <div class="scanline"></div>
+        </div>
+      </div>
+
+      <!-- lado direito: controles -->
+      <div class="controls">
+
+        <!-- passo 1: escolher -->
+        <div class="step active" id="step1">
+          <h3>Escolhe como quer entrar</h3>
+          <p>Vale selfie na hora ou uma foto que você já tem no celular.</p>
+          <div class="choice">
+            <button class="btn btn-primary" id="btnSelfie">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Tirar selfie
+            </button>
+            <button class="btn btn-ghost" id="btnGaleria">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              Escolher da galeria
+            </button>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+          </div>
+          <ul class="tips">
+            <li>Uma pessoa só na foto, de frente para a câmera.</li>
+            <li>Luz no rosto, sem sombra dura nem contraluz.</li>
+            <li>Sorriso liberado. O Piá gosta.</li>
+          </ul>
+        </div>
+
+        <!-- passo 2: confirmar -->
+        <div class="step" id="step2">
+          <h3>Ficou boa?</h3>
+          <p>Se o rosto está nítido e bem iluminado, é só transformar.</p>
+          <div class="choice">
+            <button class="btn btn-primary" id="btnTransformar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/><path d="M4 16l.6 1.4 1.4.6-1.4.6L4 20l-.6-1.4L2 18l1.4-.6z"/></svg>
+              Transformar em Piá
+            </button>
+            <button class="btn btn-ghost" id="btnTrocar">Trocar foto</button>
+          </div>
+          <div class="error" id="erro"></div>
+          <p class="privacy">Ao continuar, sua foto é enviada para o gerador e descartada logo depois.</p>
+        </div>
+
+        <!-- passo 3: resultado -->
+        <div class="step" id="step3">
+          <h3>Bem-vindo ao set.</h3>
+          <p>Baixa, compartilha e marca a gente.</p>
+          <div class="compare">
+            <figure><img id="antes" alt="Sua foto original"><figcaption>Antes</figcaption></figure>
+            <figure class="after"><img id="depois" alt="Você no traço do Piá"><figcaption>Depois</figcaption></figure>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-primary" id="btnBaixar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+              Baixar
+            </button>
+            <button class="btn btn-ghost" id="btnCompartilhar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+              Compartilhar
+            </button>
+            <button class="btn btn-ghost wide" id="btnOutra">Fazer outra</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMO FUNCIONA ================= -->
+<section id="como">
+  <div class="wrap">
+    <div class="eyebrow">Como funciona</div>
+    <h2>Três passos e você está no filme.</h2>
+    <div class="steps">
+      <div class="card"><div class="n">01</div><h3>Manda a foto</h3><p>Selfie na hora ou uma foto da galeria. Só precisa do rosto bem visível.</p></div>
+      <div class="card"><div class="n">02</div><h3>O traço do Piá entra</h3><p>A imagem é redesenhada no mesmo estilo do personagem, mantendo o seu rosto, cabelo, pele e jeito.</p></div>
+      <div class="card"><div class="n">03</div><h3>Veste a camiseta</h3><p>Você sai com a camiseta preta da equipe: PRODUÇÃO BOLD, PIX2 e tif. Pronto para postar.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PERSONAGEM ================= -->
+<section id="personagem">
+  <div class="wrap">
+    <div class="eyebrow">O personagem</div>
+    <h2>Esse é o Piá.</h2>
+    <p class="sub">O amigo do Paraná, o mesmo dos filmes do Poupatempo. Aqui ele veste a camiseta da equipe que fez os filmes. É esse traço que a sua foto vai ganhar.</p>
+    <div class="sheet"><img src="assets/character_sheet_pia.jpg" alt="Character sheet do Piá: corpo inteiro, frente, três quartos, perfil e detalhe da camiseta"></div>
+    <div class="traits">
+      <div class="trait"><b>Olhos grandes</b><span>Azuis, redondos, com brilho forte. É o que dá a expressão.</span></div>
+      <div class="trait"><b>Cabelo esculpido</b><span>Mechas grossas e definidas, como em animação 3D de cinema.</span></div>
+      <div class="trait"><b>Pele macia</b><span>Sombras suaves, bochechas rosadas, nada de textura fotográfica.</span></div>
+      <div class="trait"><b>A camiseta</b><span>Preta, com as três logos na frente. Todo mundo que entra no set ganha uma.</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="brands">
+    <img class="bold" src="assets/logo_bold_dark.png" alt="PRODUÇÃO BOLD">
+    <span class="sep"></span>
+    <img src="assets/logo_pix2_white.png" alt="PIX2">
+    <span class="sep"></span>
+    <img class="tif" src="assets/logo_tif_white.png" alt="tif">
+  </div>
+  <p>Uma brincadeira de bastidor de PRODUÇÃO BOLD, PIX2 e tif.<br>Piá é personagem do Governo do Paraná. As imagens geradas são para uso pessoal.</p>
+</footer>
+
+<!-- ================= MODAL CÂMERA ================= -->
+<div class="modal" id="camModal" role="dialog" aria-modal="true" aria-label="Câmera">
+  <div class="box">
+    <div class="frame solid">
+      <video id="video" class="mirror" autoplay playsinline muted></video>
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    </div>
+    <div class="row">
+      <button class="icon-btn" id="btnFechaCam">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Fechar
+      </button>
+      <button class="shutter" id="btnCapturar" aria-label="Tirar foto"></button>
+      <button class="icon-btn justify-end" id="btnVirar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>
+        Virar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== configuração =====
+// Se o backend estiver em outro domínio, defina window.PIA_API_URL antes deste script
+// ou troque a string abaixo.
+const API_URL = window.PIA_API_URL || "/api/transformar";
+const MAX_SIDE = 1280; // reduz a foto no navegador antes de enviar
+
+// ===== estado =====
+let fotoDataUrl = null;   // foto enviada (jpeg base64)
+let resultadoDataUrl = null;
+let stream = null;
+let facing = "user";
+
+// ===== elementos =====
+const $ = (id) => document.getElementById(id);
+const frame = $("frame"), frameEmpty = $("frameEmpty"), preview = $("preview"), loader = $("loader");
+const steps = { 1: $("step1"), 2: $("step2"), 3: $("step3") };
+const erro = $("erro");
+
+function goStep(n) {
+  Object.values(steps).forEach((s) => s.classList.remove("active"));
+  steps[n].classList.add("active");
+  erro.classList.remove("show");
+}
+
+// ===== galeria =====
+$("btnGaleria").onclick = () => $("fileInput").click();
+$("fileInput").onchange = async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  try {
+    fotoDataUrl = await fileParaDataUrl(f);
+    mostrarFoto(fotoDataUrl);
+  } catch (err) {
+    mostrarErro("Não consegui ler essa imagem. Tenta outra.");
+  }
+  e.target.value = "";
+};
+
+// ===== câmera =====
+const modal = $("camModal"), video = $("video");
+$("btnSelfie").onclick = async () => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    // sem câmera via web (ou sem HTTPS): cai no seletor nativo, que no celular oferece a câmera
+    $("fileInput").setAttribute("capture", "user");
+    $("fileInput").click();
+    $("fileInput").removeAttribute("capture");
+    return;
+  }
+  modal.classList.add("open");
+  await abrirCamera();
+};
+async function abrirCamera() {
+  pararCamera();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false,
+    });
+    video.srcObject = stream;
+    video.classList.toggle("mirror", facing === "user");
+  } catch (err) {
+    modal.classList.remove("open");
+    mostrarErro("Não deu para abrir a câmera. Libera a permissão no navegador ou escolhe da galeria.");
+    goStep(1);
+  }
+}
+function pararCamera() {
+  if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+  video.srcObject = null;
+}
+$("btnVirar").onclick = () => { facing = facing === "user" ? "environment" : "user"; abrirCamera(); };
+$("btnFechaCam").onclick = () => { pararCamera(); modal.classList.remove("open"); };
+$("btnCapturar").onclick = () => {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw) return;
+  // recorte central 3:4 (o mesmo que o usuário vê) e sem espelhar o arquivo final
+  const side = Math.min(vw, vh * 0.75);
+  const cw = side, ch = side / 0.75;
+  const sx = (vw - cw) / 2, sy = (vh - ch) / 2;
+  const c = document.createElement("canvas");
+  const scale = Math.min(1, MAX_SIDE / ch);
+  c.width = Math.round(cw * scale); c.height = Math.round(ch * scale);
+  const ctx = c.getContext("2d");
+  ctx.drawImage(video, sx, sy, cw, ch, 0, 0, c.width, c.height);
+  fotoDataUrl = c.toDataURL("image/jpeg", 0.9);
+  pararCamera(); modal.classList.remove("open");
+  mostrarFoto(fotoDataUrl);
+};
+
+// ===== preview =====
+function mostrarFoto(url) {
+  preview.src = url; preview.hidden = false; frameEmpty.hidden = true;
+  frame.classList.add("solid");
+  goStep(2);
+  $("app").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("btnTrocar").onclick = () => { preview.hidden = true; frameEmpty.hidden = false; frame.classList.remove("solid"); fotoDataUrl = null; goStep(1); };
+
+// ===== transformar =====
+const msgs = ["Ajustando a luz", "Marcando o chão", "Escolhendo a lente", "Chamando o Piá", "Vestindo a camiseta", "Últimos retoques"];
+let msgTimer = null;
+$("btnTransformar").onclick = async () => {
+  if (!fotoDataUrl) return;
+  loader.hidden = false; erro.classList.remove("show");
+  $("btnTransformar").disabled = true;
+  let i = 0; $("loaderMsg").textContent = msgs[0];
+  msgTimer = setInterval(() => { i = (i + 1) % msgs.length; $("loaderMsg").textContent = msgs[i]; }, 2800);
+
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 120000);
+    const r = await fetch(API_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imagem: fotoDataUrl, proporcao: "1:1" }), signal: ctrl.signal,
+    });
+    clearTimeout(to);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.imagem) throw new Error(j.erro || "Não consegui gerar agora. Tenta de novo.");
+    resultadoDataUrl = j.imagem;
+    $("antes").src = fotoDataUrl; $("depois").src = resultadoDataUrl;
+    preview.src = resultadoDataUrl;
+    goStep(3);
+  } catch (err) {
+    mostrarErro(err.name === "AbortError" ? "Demorou demais. Tenta de novo." : err.message);
+    goStep(2);
+  } finally {
+    clearInterval(msgTimer); loader.hidden = true; $("btnTransformar").disabled = false;
+  }
+};
+
+// ===== resultado =====
+$("btnBaixar").onclick = () => {
+  const a = document.createElement("a");
+  a.href = resultadoDataUrl; a.download = "eu-no-traco-do-pia.png"; a.click();
+};
+$("btnCompartilhar").onclick = async () => {
+  try {
+    const blob = await (await fetch(resultadoDataUrl)).blob();
+    const file = new File([blob], "eu-no-traco-do-pia.png", { type: blob.type || "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Eu no traço do Piá", text: "Virei personagem no set. PRODUÇÃO BOLD · PIX2 · tif" });
+    } else {
+      $("btnBaixar").click();
+    }
+  } catch (e) { /* usuário cancelou */ }
+};
+$("btnOutra").onclick = () => { $("btnTrocar").click(); resultadoDataUrl = null; $("app").scrollIntoView({ behavior: "smooth" }); };
+
+// ===== util =====
+function mostrarErro(msg) { erro.textContent = msg; erro.classList.add("show"); }
+
+function fileParaDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.9)); // também normaliza HEIC/orientação nos navegadores que decodificam
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+    img.src = url;
+  });
+}
+</script>
+</body>
+</html>

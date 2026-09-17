@@ -1,0 +1,35 @@
+You are receiving TWO images.
+
+IMAGE 1 is the official CHARACTER SHEET of "Piá": a 3D animated boy rendered in a Pixar/Disney feature-film style. It is the STYLE REFERENCE. Study it carefully: the render technique, the proportions, the eye design, the skin shading, the hair sculpting, the outfit.
+
+IMAGE 2 is a real photo of a person (a selfie or a portrait). It is the IDENTITY REFERENCE.
+
+YOUR TASK: redraw the person from IMAGE 2 as a new character living in EXACTLY the same visual universe as Piá in IMAGE 1. The person must be immediately recognisable to their friends and family, but fully converted into the 3D animated look.
+
+STYLE RULES (copy from IMAGE 1):
+- Same 3D animated render: soft subsurface skin shading, smooth matte surfaces, clean sculpted hair strands, glossy rounded eyes with a bright specular highlight, gentle rim light.
+- Same proportion language: slightly enlarged head, large expressive eyes, small rounded nose, soft rounded cheeks, simplified hands. Adapt the proportions to the person's age: an adult keeps adult body proportions but with the same stylisation.
+- Same warm, friendly, family-film mood. Big natural smile if the photo shows a smile; otherwise a soft, confident expression.
+- No photographic realism, no painterly brush strokes, no anime, no 2D flat cartoon. It must look like a frame from the same animated film as IMAGE 1.
+
+IDENTITY RULES (copy from IMAGE 2, these are mandatory):
+- Face shape and jawline, head shape.
+- Skin tone, exactly as in the photo (do not lighten or darken).
+- Hair: colour, length, texture (straight, wavy, curly, coily), hairline, parting, volume, and style (bun, braids, ponytail, shaved sides, bald, etc.). Grey or white hair stays grey or white.
+- Eye colour, eyebrow shape and thickness.
+- Facial hair: beard, moustache, stubble, exactly as shown.
+- Glasses, earrings, piercings, hijab, cap, headband or any accessory visible in the photo must be kept, restyled in 3D.
+- Apparent age (child, teenager, adult, elderly), gender presentation and body type must be respected.
+- Distinctive marks: freckles, moles, dimples, wrinkles, scars, birthmarks. Keep them, softened into the style.
+
+OUTFIT (mandatory, from IMAGE 1):
+- The person wears the SAME black cotton t-shirt as Piá, with the same three logos printed on the chest, stacked in this exact order and colours: "PRODUÇÃO BOLD" wordmark on top (small white "PRODUÇÃO" above a chunky electric-blue "bold"), then "PIX2" in white pixel blocks, then the "tif" lowercase wordmark in white/cream below. Reproduce the logos legibly and correctly spelled. Do not invent extra logos or text.
+- Lower body may follow the sheet (beige cargo pants) when visible.
+
+FRAMING AND BACKGROUND:
+- Portrait framing: head and shoulders to mid-chest, centred, so the face and the t-shirt logos are both clearly visible. Same camera height as a friendly selfie, slight three-quarter turn allowed.
+- Background: the backstage of a live-action film set, out of focus. Warm tungsten film lights on stands, a cinema camera, a director's chair, a green screen wall far behind, cables on the floor. Soft bokeh, the person is sharply in focus.
+- Only ONE person in the output. If the photo contains more than one person, use the most prominent face in the centre.
+- No watermark, no captions, no extra text anywhere except the three logos on the t-shirt.
+
+OUTPUT: one single high-quality image, square 1:1, ready to be shared on social media.
