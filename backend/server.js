@@ -9,7 +9,7 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { salvar, listar, remover, GALERIA_DIR } from "./galeria.js";
+import { salvar, listar, remover, limparNome, GALERIA_DIR } from "./galeria.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -166,7 +166,9 @@ app.post("/api/transformar", async (req, res) => {
   const barrado = freio(ip);
   if (barrado) return res.status(429).json({ erro: barrado });
 
-  const { imagem, proporcao = "1:1", ticket } = req.body || {};
+  const { imagem, proporcao = "1:1", ticket, nome } = req.body || {};
+  const nomeLimpo = limparNome(nome);
+  if (!nomeLimpo) return res.status(400).json({ erro: "Escreve seu nome antes de gerar." });
   const tk = typeof ticket === "string" && ticket.length <= 64 ? ticket : null;
   const parsed = parseDataUrl(imagem);
   if (!parsed) return res.status(400).json({ erro: "Envie a foto em base64 (data URL jpeg, png ou webp)." });
@@ -206,7 +208,7 @@ app.post("/api/transformar", async (req, res) => {
           falha(Object.assign(new Error("abortado"), { name: "AbortError" }));
         }, { once: true });
       });
-      const id = await guardar(Buffer.from(MOCK_B64, "base64"));
+      const id = await guardar(Buffer.from(MOCK_B64, "base64"), nomeLimpo);
       const fila = esperou >= 0.1 ? ` (fila ${esperou.toFixed(1)}s)` : "";
       console.log(`[ok] mock em ${((Date.now() - t0) / 1000).toFixed(1)}s${fila}`);
       return res.json({ imagem: `data:image/jpeg;base64,${MOCK_B64}`, modelo: "mock", id });
@@ -215,7 +217,7 @@ app.post("/api/transformar", async (req, res) => {
     const out = await gerarComGemini(parsed, proporcao, ctrl.signal);
     const fila = esperou >= 0.1 ? ` (fila ${esperou.toFixed(1)}s)` : "";
     console.log(`[ok] ${GEMINI_IMAGE_MODEL} em ${((Date.now() - t0) / 1000).toFixed(1)}s${fila}`);
-    const id = await guardar(Buffer.from(out.data, "base64"));
+    const id = await guardar(Buffer.from(out.data, "base64"), nomeLimpo);
     res.json({ imagem: `data:${out.mimeType};base64,${out.data}`, modelo: GEMINI_IMAGE_MODEL, id });
   } catch (e) {
     if (e.name === "AbortError" || ctrl.signal.aborted) {
@@ -263,10 +265,10 @@ export default app;
 // ---------- helpers ----------
 // A foto do usuário continua não sendo salva: só o resultado gerado vai para o mural.
 // Falha de disco aqui não pode custar ao usuário a imagem que ele já esperou 25 s.
-async function guardar(buffer) {
+async function guardar(buffer, nome) {
   if (!galeriaLigada) return null;
   try {
-    return await salvar(buffer);
+    return await salvar(buffer, nome);
   } catch (e) {
     console.error("[erro ao salvar no mural]", e.message);
     return null;

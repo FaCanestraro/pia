@@ -21,12 +21,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const GALERIA_DIR = process.env.GALERIA_DIR || path.join(__dirname, "galeria");
 const FULL_DIR = path.join(GALERIA_DIR, "full");
 const THUMB_DIR = path.join(GALERIA_DIR, "thumb");
+const META_DIR = path.join(GALERIA_DIR, "meta");
 
 const LADO_FULL = 1024;
 const LADO_THUMB = 420;
 const ID_RE = /^[0-9]{13}-[a-z0-9]{6}$/; // trava o id: só o que a gente mesmo gerou
 
-for (const dir of [FULL_DIR, THUMB_DIR]) fs.mkdirSync(dir, { recursive: true });
+for (const dir of [FULL_DIR, THUMB_DIR, META_DIR]) fs.mkdirSync(dir, { recursive: true });
+
+// Nome de quem gerou, em arquivo separado por imagem (nada de índice único: manteria
+// a corrida de escrita que o resto do módulo evita). O disco é a verdade; este Map é
+// só cache, preenchido no boot e atualizado a cada gravação, para que listar() não
+// faça uma leitura de disco por item a cada poll do mural.
+const nomesPorId = new Map();
+
+function carregarNomes() {
+  let arquivos = [];
+  try { arquivos = fs.readdirSync(META_DIR); } catch { return; }
+  for (const f of arquivos) {
+    if (!f.endsWith(".json")) continue;
+    const id = f.slice(0, -5);
+    if (!ID_RE.test(id)) continue;
+    try {
+      const { nome } = JSON.parse(fs.readFileSync(path.join(META_DIR, f), "utf8"));
+      if (nome) nomesPorId.set(id, nome);
+    } catch { /* metadado corrompido não pode derrubar o boot */ }
+  }
+}
+
+// Nome é dado de pessoa e vai para uma página pública: corta controle, colapsa espaço
+// e limita o tamanho, para não quebrar o layout nem servir de vetor de injeção.
+export function limparNome(v) {
+  if (typeof v !== "string") return "";
+  return v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+}
 
 function novoId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8).padStart(6, "0")}`;
@@ -34,8 +62,9 @@ function novoId() {
 
 // Grava a imagem gerada e devolve o id. Converte para JPEG: o mural não precisa de
 // PNG sem perda e o tamanho cai de ~600 KB para ~120 KB por resultado.
-export async function salvar(buffer) {
+export async function salvar(buffer, nome = "") {
   const id = novoId();
+  const limpo = limparNome(nome);
   const base = sharp(buffer).rotate();
   await Promise.all([
     base.clone().resize(LADO_FULL, LADO_FULL, { fit: "inside", withoutEnlargement: true })
@@ -43,6 +72,12 @@ export async function salvar(buffer) {
     base.clone().resize(LADO_THUMB, LADO_THUMB, { fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 80 }).toFile(path.join(THUMB_DIR, `${id}.jpg`)),
   ]);
+  if (limpo) {
+    // Depois das imagens: metadado sem imagem é lixo inofensivo, imagem sem metadado
+    // apenas aparece no mural sem nome.
+    await fsp.writeFile(path.join(META_DIR, `${id}.json`), JSON.stringify({ nome: limpo }));
+    nomesPorId.set(id, limpo);
+  }
   return id;
 }
 
@@ -69,6 +104,7 @@ export async function listar({ limit = 60, desde = null } = {}) {
     total: ids.length,
     itens: janela.map((id) => ({
       id,
+      nome: nomesPorId.get(id) || "",
       thumb: `/galeria/thumb/${id}.jpg`,
       full: `/galeria/full/${id}.jpg`,
       ts: Number(id.split("-")[0]),
@@ -79,10 +115,13 @@ export async function listar({ limit = 60, desde = null } = {}) {
 // Válvula de remoção: usada pela rota protegida por ADMIN_TOKEN.
 export async function remover(id) {
   if (!ID_RE.test(id)) return false;
-  const alvos = [path.join(FULL_DIR, `${id}.jpg`), path.join(THUMB_DIR, `${id}.jpg`)];
+  const alvos = [path.join(FULL_DIR, `${id}.jpg`), path.join(THUMB_DIR, `${id}.jpg`), path.join(META_DIR, `${id}.json`)];
   let apagou = false;
   for (const a of alvos) {
     try { await fsp.unlink(a); apagou = true; } catch { /* já não existia */ }
   }
+  nomesPorId.delete(id);
   return apagou;
 }
+
+carregarNomes();

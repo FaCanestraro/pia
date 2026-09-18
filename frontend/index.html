@@ -210,6 +210,25 @@
     margin-top:28px;padding:40px 24px;text-align:center;border-radius:var(--radius);
     border:1px dashed var(--line);color:var(--muted);font-size:15px;line-height:1.55
   }
+  /* campo de nome */
+  .campo-nome{margin:18px 0 4px}
+  .campo-nome label{display:block;font:600 13px/1 var(--font-body);color:var(--muted);margin-bottom:8px}
+  .campo-nome input{
+    width:100%;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.06);
+    border:1px solid var(--line);color:var(--text);font:500 16px/1.2 var(--font-body);
+  }
+  .campo-nome input::placeholder{color:rgba(169,169,200,.6)}
+  .campo-nome input:focus{outline:none;border-color:#8f8fff;background:rgba(255,255,255,.09)}
+  .campo-nome input[aria-invalid="true"]{border-color:rgba(255,59,59,.55)}
+
+  /* nome sobre a miniatura do mural */
+  .mosaico figcaption{
+    position:absolute;inset:auto 0 0 0;padding:20px 10px 8px;
+    font:600 13px/1.2 var(--font-body);color:#fff;
+    background:linear-gradient(180deg,transparent,rgba(7,7,15,.85));
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
   /* lightbox */
   #lightbox .box{width:min(680px,100%)}
   #lightbox img{width:100%;border-radius:var(--radius);border:1px solid var(--line)}
@@ -284,7 +303,7 @@
   <div class="wrap">
     <div class="eyebrow">Sua vez</div>
     <h2>Entra no set.</h2>
-    <p class="sub">A foto é usada só para gerar a imagem e não fica salva em lugar nenhum.</p>
+    <p class="sub">Sua foto é usada só para gerar a imagem e não fica salva. O resultado, com o seu nome, entra no mural no fim da página.</p>
 
     <div class="stage">
       <!-- lado esquerdo: quadro -->
@@ -335,6 +354,11 @@
         <div class="step" id="step2">
           <h3>Ficou boa?</h3>
           <p>Se o rosto está nítido e bem iluminado, é só transformar.</p>
+          <div class="campo-nome">
+            <label for="nome">Seu nome</label>
+            <input id="nome" type="text" maxlength="40" autocomplete="given-name"
+                   placeholder="Como você quer aparecer no mural" enterkeyhint="go">
+          </div>
           <div class="choice">
             <button class="btn btn-primary" id="btnTransformar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/><path d="M4 16l.6 1.4 1.4.6-1.4.6L4 20l-.6-1.4L2 18l1.4-.6z"/></svg>
@@ -343,7 +367,7 @@
             <button class="btn btn-ghost" id="btnTrocar">Trocar foto</button>
           </div>
           <div class="error" id="erro"></div>
-          <p class="privacy">Ao continuar, sua foto é enviada para o gerador e descartada logo depois.</p>
+          <p class="privacy">Ao continuar, sua foto é enviada para o gerador e descartada logo depois. A imagem gerada e o seu nome ficam visíveis no mural desta página.</p>
         </div>
 
         <!-- passo 3: resultado -->
@@ -558,6 +582,11 @@ function mostrarFoto(url) {
   goStep(2);
   $("app").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+$("nome").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); $("btnTransformar").click(); }
+});
+$("nome").addEventListener("input", () => $("nome").removeAttribute("aria-invalid"));
+
 $("btnTrocar").onclick = () => { preview.hidden = true; frameEmpty.hidden = false; frame.classList.remove("solid"); fotoDataUrl = null; goStep(1); };
 
 // ===== transformar =====
@@ -565,6 +594,16 @@ const msgs = ["Ajustando a luz", "Marcando o chão", "Escolhendo a lente", "Cham
 let msgTimer = null, filaTimer = null;
 $("btnTransformar").onclick = async () => {
   if (!fotoDataUrl) return;
+
+  const campoNome = $("nome");
+  const nome = campoNome.value.replace(/\s+/g, " ").trim().slice(0, 40);
+  if (!nome) {
+    campoNome.setAttribute("aria-invalid", "true");
+    campoNome.focus();
+    return mostrarErro("Escreve seu nome antes de gerar.");
+  }
+  campoNome.removeAttribute("aria-invalid");
+
   loader.hidden = false; erro.classList.remove("show");
   const ticket = (crypto.randomUUID?.() || String(Math.random())).slice(0, 36);
   $("btnTransformar").disabled = true;
@@ -597,7 +636,7 @@ $("btnTransformar").onclick = async () => {
     const to = setTimeout(() => ctrl.abort(), 180000);
     const r = await fetch(API_URL, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imagem: fotoDataUrl, proporcao: "1:1", ticket }), signal: ctrl.signal,
+      body: JSON.stringify({ imagem: fotoDataUrl, proporcao: "1:1", ticket, nome }), signal: ctrl.signal,
     });
     clearTimeout(to);
     const j = await r.json().catch(() => ({}));
@@ -643,11 +682,20 @@ const FILA_URL = (window.PIA_API_URL || "/api/transformar").replace(/\/transform
 const mural = $("mural"), mosaico = $("mosaico"), muralVazio = $("muralVazio"), muralCount = $("muralCount");
 let idMaisNovo = null, totalMural = 0;
 
-function cartaoMural({ id, thumb, full }) {
+function cartaoMural({ id, thumb, full, nome }) {
   const fig = document.createElement("figure");
   fig.tabIndex = 0;
   fig.dataset.full = full;
-  fig.innerHTML = `<img src="${thumb}" alt="Resultado gerado no traço do Piá" loading="lazy" decoding="async">`;
+  const img = document.createElement("img");
+  img.src = thumb;
+  img.alt = nome ? `${nome} no traço do Piá` : "Resultado gerado no traço do Piá";
+  img.loading = "lazy"; img.decoding = "async";
+  fig.appendChild(img);
+  if (nome) {
+    const cap = document.createElement("figcaption");
+    cap.textContent = nome;   // textContent: o nome vem do público, nunca como HTML
+    fig.appendChild(cap);
+  }
   const abrir = () => abrirLightbox(full);
   fig.onclick = abrir;
   fig.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } };

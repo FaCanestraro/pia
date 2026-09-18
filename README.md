@@ -68,8 +68,15 @@ Cada geração é gravada em `backend/galeria/` e aparece num mosaico no fim do 
 ```
 backend/galeria/
 ├── full/<id>.jpg    1024px, o que abre ao clicar
-└── thumb/<id>.jpg   420px, o que o mosaico carrega
+├── thumb/<id>.jpg   420px, o que o mosaico carrega
+└── meta/<id>.json   { "nome": "..." } de quem gerou
 ```
+
+O nome de quem gerou fica em `galeria/meta/<id>.json`. Arquivo por imagem, não índice
+único: um índice traria de volta a corrida de escrita que o resto do módulo evita. O
+disco é a verdade; um Map em memória, carregado no boot, evita uma leitura de disco por
+item a cada poll do mural. O nome é higienizado na gravação (sem controle, espaço
+colapsado, 40 caracteres) e renderizado com `textContent`, nunca `innerHTML`.
 
 O `id` é `<timestamp>-<aleatório>`, então a ordem cronológica sai do próprio nome do
 arquivo — sem índice em JSON e sem corrida de escrita entre requisições simultâneas.
