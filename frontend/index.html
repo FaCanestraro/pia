@@ -229,6 +229,44 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
 
+  /* sorteio (só em /sorteio) */
+  #sorteio{background:var(--ink-2);border-top:1px solid var(--line);text-align:center}
+  #sorteio .wrap{display:grid;justify-items:center;gap:6px}
+  .btn-sortear{
+    margin-top:26px;padding:20px 44px;border-radius:999px;background:var(--blue);color:#fff;
+    font:700 20px/1 var(--font-head);letter-spacing:.01em;
+    box-shadow:0 10px 40px rgba(20,20,255,.35);transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .btn-sortear:hover{transform:translateY(-2px);box-shadow:0 14px 48px rgba(20,20,255,.5)}
+  .btn-sortear[disabled]{opacity:.55;pointer-events:none;transform:none}
+
+  .palco{
+    margin-top:30px;width:min(420px,100%);aspect-ratio:1;border-radius:var(--radius);
+    overflow:hidden;border:1px solid var(--line);background:var(--panel);
+    display:grid;place-items:center;position:relative;
+  }
+  .palco img{width:100%;height:100%;object-fit:cover}
+  .palco .vazio{color:var(--muted);font-size:15px;padding:24px;line-height:1.5}
+  .palco.girando img{filter:blur(1px) saturate(1.15)}
+  .palco.premiado{border-color:#8f8fff;box-shadow:0 0 0 3px rgba(143,143,255,.28),0 20px 60px rgba(20,20,255,.28)}
+  .palco.premiado img{animation:revelar .5s cubic-bezier(.2,.9,.3,1.3) both}
+  @keyframes revelar{from{transform:scale(1.14);opacity:.4}to{transform:none;opacity:1}}
+
+  .nome-sorteado{
+    margin-top:20px;font:700 clamp(26px,5vw,44px)/1.1 var(--font-head);letter-spacing:-.02em;
+    min-height:1.1em;
+  }
+  .nome-sorteado.girando{color:var(--muted);font-size:clamp(20px,3.5vw,28px)}
+  .selo{
+    display:inline-block;margin-top:10px;padding:8px 16px;border-radius:999px;
+    background:rgba(143,143,255,.16);border:1px solid rgba(143,143,255,.4);
+    font:600 12px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:#c9c9ff;
+  }
+  @media(prefers-reduced-motion:reduce){
+    .palco.premiado img{animation:none}
+    .btn-sortear{transition:none}
+  }
+
   /* lightbox */
   #lightbox .box{width:min(680px,100%)}
   #lightbox img{width:100%;border-radius:var(--radius);border:1px solid var(--line)}
@@ -438,6 +476,25 @@
     <p class="sub">Todo mundo que passou pela câmera hoje. O seu aparece assim que ficar pronto.</p>
     <div class="mosaico" id="mosaico"></div>
     <div class="mural-vazio" id="muralVazio" hidden>Ainda não tem ninguém no set. Seja o primeiro.</div>
+  </div>
+</section>
+
+<!-- ================= SORTEIO (só em /sorteio) ================= -->
+<section id="sorteio" hidden>
+  <div class="wrap">
+    <div class="eyebrow">Hora do sorteio</div>
+    <h2>E o escolhido do set é...</h2>
+    <p class="sub" style="text-align:center">Sorteia entre todo mundo que já entrou no mural.</p>
+
+    <div class="palco" id="palco">
+      <div class="vazio" id="palcoVazio">Ninguém no mural ainda. Assim que alguém gerar, o sorteio libera.</div>
+      <img id="palcoImg" alt="" hidden>
+    </div>
+    <div class="nome-sorteado" id="nomeSorteado"></div>
+    <div id="seloSorteio"></div>
+
+    <button class="btn-sortear" id="btnSortear">Sortear</button>
+    <p class="privacy" id="restamSorteio" style="margin-top:14px"></p>
   </div>
 </section>
 
@@ -743,6 +800,110 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("light
 
 carregarMural();
 setInterval(() => { if (!document.hidden) carregarMural({ incremental: true }); }, 25000);
+
+
+// ===== sorteio (só na rota /sorteio) =====
+// A página é a mesma de sempre; aqui só ligamos a seção extra. Assim as duas rotas
+// nunca saem de sincronia.
+const ehSorteio = location.pathname.replace(/\/+$/, "") === "/sorteio";
+
+if (ehSorteio) {
+  const secao = $("sorteio"), palco = $("palco"), palcoImg = $("palcoImg"),
+        palcoVazio = $("palcoVazio"), nomeEl = $("nomeSorteado"),
+        seloEl = $("seloSorteio"), btn = $("btnSortear"), restamEl = $("restamSorteio");
+  secao.hidden = false;
+
+  const jaSorteados = new Set();   // não repete alguém enquanto houver gente nova
+  let sorteando = false;
+
+  async function buscarCandidatos() {
+    const r = await fetch(`${GALERIA_URL}?limit=200`, { cache: "no-store" });
+    if (!r.ok) throw new Error("mural indisponível");
+    const { itens } = await r.json();
+    return itens || [];
+  }
+
+  function pintar(item, girando) {
+    palcoVazio.hidden = true;
+    palcoImg.hidden = false;
+    palcoImg.src = girando ? item.thumb : item.full;   // thumb no giro: troca rápida sem pesar
+    palcoImg.alt = item.nome ? `${item.nome} no traço do Piá` : "Participante do mural";
+    nomeEl.textContent = item.nome || "Sem nome";
+  }
+
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sorteio = (a) => a[Math.floor(Math.random() * a.length)];
+
+  btn.onclick = async () => {
+    if (sorteando) return;
+    sorteando = true;
+    btn.disabled = true;
+    seloEl.innerHTML = "";
+    palco.classList.remove("premiado");
+    restamEl.textContent = "";
+
+    let todos;
+    try {
+      todos = await buscarCandidatos();
+    } catch {
+      nomeEl.textContent = "Não consegui ler o mural. Tenta de novo.";
+      btn.disabled = false; sorteando = false;
+      return;
+    }
+
+    if (!todos.length) {
+      palcoImg.hidden = true; palcoVazio.hidden = false;
+      nomeEl.textContent = "";
+      btn.disabled = false; sorteando = false;
+      return;
+    }
+
+    // Só repete alguém quando todo mundo já foi sorteado.
+    let elegiveis = todos.filter((i) => !jaSorteados.has(i.id));
+    if (!elegiveis.length) { jaSorteados.clear(); elegiveis = todos; }
+
+    const vencedor = sorteio(elegiveis);
+
+    // Roleta: troca rápido e vai desacelerando até parar no vencedor.
+    palco.classList.add("girando");
+    nomeEl.classList.add("girando");
+    btn.textContent = "Sorteando...";
+
+    let intervalo = 70;
+    const inicio = Date.now();
+    while (Date.now() - inicio < 2600) {
+      pintar(sorteio(todos), true);
+      await espera(intervalo);
+      intervalo = Math.min(intervalo * 1.14, 340);   // desacelera
+    }
+    for (const ms of [380, 460, 560, 700]) {         // últimos passos, bem lentos
+      pintar(sorteio(todos), true);
+      await espera(ms);
+    }
+
+    palco.classList.remove("girando");
+    nomeEl.classList.remove("girando");
+    pintar(vencedor, false);
+    palco.classList.add("premiado");
+    seloEl.innerHTML = '<span class="selo">Sorteado</span>';
+    jaSorteados.add(vencedor.id);
+
+    const restam = todos.length - jaSorteados.size;
+    restamEl.textContent = restam > 0
+      ? `${restam} ${restam === 1 ? "pessoa ainda não foi sorteada" : "pessoas ainda não foram sorteadas"}`
+      : "Todo mundo já foi sorteado. O próximo sorteio recomeça do zero.";
+
+    btn.textContent = "Sortear de novo";
+    btn.disabled = false;
+    sorteando = false;
+  };
+
+  // Deixa o botão coerente com o mural já na chegada.
+  buscarCandidatos().then((itens) => {
+    if (!itens.length) restamEl.textContent = "O mural está vazio no momento.";
+    else restamEl.textContent = `${itens.length} ${itens.length === 1 ? "pessoa" : "pessoas"} no mural`;
+  }).catch(() => {});
+}
 
 // ===== util =====
 function mostrarErro(msg) { erro.textContent = msg; erro.classList.add("show"); }

@@ -100,6 +100,22 @@ efêmero e somente leitura fora de `/tmp`: a pasta some a cada invocação e o m
 sempre vazio. Para Vercel, trocar `backend/galeria.js` por Vercel Blob, S3 ou R2 — a
 interface é só `salvar`/`listar`/`remover`, o resto do código não muda.
 
+## Sorteio (`/sorteio`)
+
+Rota de telão para a apresentação. **É a mesma `index.html`**, servida por
+`app.get("/sorteio")`: o front liga a seção olhando `location.pathname`. Não existe
+arquivo duplicado, então as duas rotas nunca saem de sincronia.
+
+A página aparece idêntica à principal (inclusive o mural) e ganha no fim um botão
+**Sortear**, com giro tipo roleta que desacelera até parar no escolhido, revelando a
+imagem grande e o nome.
+
+- Sorteia entre quem está no mural no momento do clique (busca a lista na hora, não usa
+  o que já estava em tela).
+- Não repete ninguém enquanto houver gente não sorteada; quando todos saírem, recomeça.
+- Mural vazio mostra aviso em vez de quebrar.
+- Limitado aos 200 mais recentes, pelo teto de `/api/galeria`.
+
 ## Fila e limites
 
 Uma medição em produção mostrou que a API do Gemini degrada muito com chamadas

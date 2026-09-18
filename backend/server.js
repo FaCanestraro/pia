@@ -67,6 +67,12 @@ app.use((req, res, next) => {
 // serve o frontend da pasta ../frontend (opcional: pode hospedar o front em outro lugar)
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
+// /sorteio é a MESMA página, não uma cópia: o front liga o bloco de sorteio olhando o
+// caminho. Duplicar o HTML significaria manter duas versões em sincronia para sempre.
+app.get("/sorteio", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
+});
+
 // imagens do mural (cache longo: o nome do arquivo nunca se repete)
 app.use("/galeria", express.static(GALERIA_DIR, { maxAge: "30d", immutable: true }));
 
